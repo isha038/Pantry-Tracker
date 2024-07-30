@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npm install --legacy-peer-deps"
-
+    
   },
   "dependencies": {
     "@emotion/react": "^11.13.0",
@@ -17,8 +16,7 @@
     "firebase": "^10.12.4",
     "next": "14.2.5",
     "react": "^18",
-    "react-dom": "^18",
-    "reactfire": "^4.2.3"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "eslint": "^8",
