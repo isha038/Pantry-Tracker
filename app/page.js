@@ -239,14 +239,24 @@ export default function Home() {
             {typeof name === 'string' ? name.charAt(0).toUpperCase() + name.slice(1) : 'Unnamed Item'}
             </Typography>
             <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
-              Quantity: {count}
+              {count}
             </Typography>
+            <Stack direction={'row'} spacing = {2}>
+              <Button
+              variant = "contained"
+              onClick = {
+                () => addItem(name)
+              }
+              >
+                Add
+              </Button>
             <Button variant='contained' onClick ={
             () => removeItem(name)
           }>
             Remove
             
           </Button>
+          </Stack>
           </Box>
         ))
         }
