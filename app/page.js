@@ -1,11 +1,15 @@
 "use client";
 
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Box, Stack, Typography, Button, Modal, TextField, filledInputClasses } from "@mui/material";
 // box similar to div
+import CameraComponent from './CameraComponent';
+import { uploadImage } from './imageUtils';
+
 import { firestore } from "@/firebase";
 import { collection, doc, query, getDocs, setDoc, deleteDoc, getDoc ,updateDoc} from "firebase/firestore";
+
 
 const style = {
   position: 'absolute',
@@ -25,24 +29,65 @@ const style = {
 
 
 
+function useErrorBoundary() {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const handleError = (event) => {
+      setHasError(true);
+    };
+
+    window.addEventListener('error', handleError);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+    };
+  }, []);
+
+  return hasError;
+}
+
+const ErrorBoundary = ({ children }) => {
+  const hasError = useErrorBoundary();
+
+  if (hasError) {
+    return <h1>Something went wrong.</h1>;
+  }
+
+  return children;
+};
+
+
+
+
 export default function Home() {
   const [openAdd, setOpenAdd] = useState(false);
   const [openSearch, setOpenSearch] = useState(false);
   const [openNoResults, setOpenNoResults] = useState(false);
+  const [openCamera, setOpenCamera] = useState(false);
+ 
+  
+  const [itemName, setItemName] = useState('');
+  const [search, setSearch] = useState('');
+  const [pantry, setPantry] = useState([]);
+  const [filteredPantry, setFilteredPantry] = useState([]);
 
   const handleOpenAdd = () => setOpenAdd(true);
   const handleCloseAdd = () => setOpenAdd(false);
-
   const handleOpenSearch = () => setOpenSearch(true);
   const handleCloseSearch = () => setOpenSearch(false);
-
   const handleCloseNoResults = () => setOpenNoResults(false);
-  
+  const handleOpenCamera = () => setOpenCamera(true);
+  const handleCloseCamera = () => setOpenCamera(false);
 
-  const [pantry, setPantry] = useState([])
-  const [itemName, setItemName] = useState('')
-  const [search, setSearch] = useState('')
-  const [filteredPantry, setFilteredPantry] = useState([]);
+  const handleTakePhoto = async (dataUri) => {
+    handleCloseCamera();
+    const base64Image = dataUri.split(',')[1];
+    
+    await uploadImage(dataUri);
+  };
+
+
 
   const updatePantry = async () =>
     {
@@ -57,6 +102,8 @@ export default function Home() {
     setPantry(pantryList)
     setFilteredPantry(pantryList);
   }
+
+  
 
   useEffect(()=>{
     updatePantry()
@@ -122,6 +169,8 @@ export default function Home() {
     handleCloseSearch(); // Close the modal after search
   };
   return (
+    <ErrorBoundary>
+      <Suspense fallback={<div>Loading...</div>}>
     <Box
       width="100vw"
       height="100vh"
@@ -135,7 +184,18 @@ export default function Home() {
       <Stack width="100%" direction={'row'} spacing={2} justifyContent={"center"} alignItems={"center"}>
         <Button variant="contained" onClick={handleOpenAdd}>Add</Button>
         <Button variant="contained" onClick={handleOpenSearch}>Search</Button>
+        <Button variant="contained" onClick={handleOpenCamera}>Take Photo</Button>
+        
       </Stack>
+      <Modal open={openCamera} onClose={handleCloseCamera}>
+        <Box sx={{width: '90%', height:"100%" }}>
+          <CameraComponent onTakePhoto={handleTakePhoto} />
+        </Box>
+      </Modal>
+
+     
+
+      
 
       <Modal
         open={openAdd}
@@ -265,5 +325,8 @@ export default function Home() {
       </Stack> 
       </Box>
     </Box>
+    </Suspense>
+    </ErrorBoundary>
   );
+  
 }
