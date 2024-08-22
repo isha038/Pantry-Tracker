@@ -22,7 +22,7 @@ export default async function handler(req, res) {
           {
             role: "user",
             content: [
-              { type: "text", text: "Identify the item(s) in the image and return them in a JSON format. Each item should have the following properties: name (the name of the item), category (the category of the item, chosen from the following options: Fruit, Vegetable, Dairy, Meat, Grain, Snack, Flour, Seeds, Spices, Beverages, Canned Goods, Condiments, Frozen, Baking Supplies, Nuts, Oils, Pasta, Rice, Sauces, Seafood), quantity (the estimated quantity of the item), and unit (the unit of measurement, chosen from the following options: kg, lb, piece, cup, g, m, l).The name of the item should be moe than one word." },
+              { type: "text", text: "Identify the item(s) in the image and return them in a JSON format. Each item should have the following properties: name (the name of the item), category (the category of the item, chosen from the following options: Fruit, Vegetable, Dairy, Meat, Grain, Snack, Flour, Seeds, Spices, Beverages, Canned Goods, Condiments, Frozen, Baking Supplies, Nuts, Oils, Pasta, Rice, Sauces, Seafood), quantity (the estimated quantity of the item), and unit (the unit of measurement, chosen from the following options: kg, lb, piece, cup, g, m, l).The name of the item should not be more than one word." },
               { type: "image_url",
                 image_url: {
                   url: imageUrl
