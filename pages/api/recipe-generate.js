@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4", // Confirm the model name; use gpt-4 or gpt-4-turbo if applicable
+        model: "gpt-4o-mini", // Confirm the model name; use gpt-4 or gpt-4-turbo if applicable
         messages: [
           {
             role: "system",
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
             content: `Here are the ingredients from my pantry: ${ingredientList}.Please create a recipe using these ingredients.`, // Directly stringify the data without wrapping it in an array
           },
         ],
-        max_tokens: 1000,
+        max_tokens: 500,
       });
 
       if (!response.choices || response.choices.length === 0) {
