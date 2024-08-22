@@ -1,4 +1,4 @@
-import axios from 'axios';
+
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { firestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -32,4 +32,60 @@ export async function uploadImage(dataUri) {
     return null;
   }
 }
+
+export async function analyzeImageWithGptVisionAPI(imageUrl) {
+  try {
+    const response = await fetch('/api/analyze-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ imageUrl }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to analyze image');
+    }
+
+    const data = await response.json();
+  
+    if (data.length === 0) {
+      alert("No items recognized in the image.");
+    }
+    return data;
+  } catch (error) {
+    console.error("Error creating completion:", error);
+    throw error;
+  }
+}
+export async function generateRecipeWithPantryIngredients(pantryItems) {
+  try {
+    
+    
+
+    // Call OpenAI API for recipe generation
+    const response = await fetch('/api/recipe-generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(pantryItems),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate recipe');
+    }
+
+    const data = await response.json();
+
+    
+
+    // Assuming the response contains a choice with the recipe text
+    return data.text;
+  } catch (error) {
+    console.error("Error generating recipe:", error);
+    throw error;
+  }
+}
+
 

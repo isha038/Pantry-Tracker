@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { Box, Stack, Typography, Button, Modal, TextField, filledInputClasses } from "@mui/material";
 // box similar to div
 import CameraComponent from './CameraComponent';
-import { uploadImage } from './imageUtils';
+import { uploadImage,analyzeImageWithGptVisionAPI, generateRecipeWithPantryIngredients } from './imageUtils';
 
 import { firestore } from "@/firebase";
 import { collection, doc, query, getDocs, setDoc, deleteDoc, getDoc ,updateDoc} from "firebase/firestore";
@@ -71,7 +71,14 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [pantry, setPantry] = useState([]);
   const [filteredPantry, setFilteredPantry] = useState([]);
+  const [classificationResult, setClassificationResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [recipe, setRecipe] = useState('');
+  const [error, setError] = useState(null);
+  const [openRecipe, setOpenRecipe] = useState(false)
 
+  const handleOpenRecipe = () => setOpenRecipe(true);
+  const handleCloseRecipe = () => setOpenRecipe(false);
   const handleOpenAdd = () => setOpenAdd(true);
   const handleCloseAdd = () => setOpenAdd(false);
   const handleOpenSearch = () => setOpenSearch(true);
@@ -81,14 +88,55 @@ export default function Home() {
   const handleCloseCamera = () => setOpenCamera(false);
 
   const handleTakePhoto = async (dataUri) => {
-    handleCloseCamera();
-    const base64Image = dataUri.split(',')[1];
-    
-    await uploadImage(dataUri);
+    setClassificationResult(null);
+    setErrorMessage(null);
+  
+    try {
+      // Close the camera interface
+      handleCloseCamera();
+  
+      // Upload the image and get the download URL
+      const imageUrl = await uploadImage(dataUri);
+  
+      if (imageUrl) {
+        // Analyze the image using GPT Vision API
+        const classificationData = await analyzeImageWithGptVisionAPI(imageUrl);
+  
+        // Log the full response to verify structure
+        console.log('Full Classification Data:', classificationData);
+  
+        if (Array.isArray(classificationData) && classificationData.length > 0) {
+          // Map the classification data to extract relevant details
+          const items = classificationData.map(item => ({
+            name: item.name,
+            category: item.category,
+            quantity: item.quantity,
+            unit: item.unit
+          }));
+  
+          // Store the result in state to display it later
+          setClassificationResult(items);
+  
+          // Example of handling additional operations
+          if (items.length > 0) {
+            // Assuming you want to add the first item to the pantry
+            const itemName = items[0].name;
+            await addItem(itemName);
+            await updatePantry();
+          }
+        } else {
+          setErrorMessage('No items recognized in the image.');
+        }
+      } else {
+        console.error('Image upload failed.');
+        setErrorMessage('Failed to upload the image.');
+      }
+    } catch (error) {
+      console.error('Error processing photo:', error);
+      setErrorMessage('Failed to analyze the image. Please try again.');
+    }
   };
-
-
-
+  
   const updatePantry = async () =>
     {
     const snapshot = query(collection(firestore, 'pantry'))
@@ -111,6 +159,7 @@ export default function Home() {
 
 
   const addItem = async (item) => {
+    
     const docRef = doc(collection(firestore, 'pantry'),item)
     const docSnap = await getDoc(docRef)
     
@@ -168,6 +217,22 @@ export default function Home() {
     setSearch('')
     handleCloseSearch(); // Close the modal after search
   };
+  const handleGenerateRecipe = async () => {
+    try {
+      // Generate the recipe using pantry items
+      const generatedRecipe = await generateRecipeWithPantryIngredients(filteredPantry);
+      setRecipe(generatedRecipe);
+      console.log(generatedRecipe)
+      setError(''); // Clear any previous errors
+      setOpenRecipe(true); // Ensure the modal opens
+    } catch (error) {
+      console.error('Error generating recipe:', error);
+      setError('Failed to generate recipe. Please try again.');
+      
+    }
+  };
+  
+
   return (
     <ErrorBoundary>
       <Suspense fallback={<div>Loading...</div>}>
@@ -185,13 +250,83 @@ export default function Home() {
         <Button variant="contained" onClick={handleOpenAdd}>Add</Button>
         <Button variant="contained" onClick={handleOpenSearch}>Search</Button>
         <Button variant="contained" onClick={handleOpenCamera}>Take Photo</Button>
-        
+        <Button variant="contained" onClick={handleGenerateRecipe}>
+        Generate Recipe
+      </Button>
       </Stack>
+      
+      <Modal
+        open={openRecipe}
+        onClose={handleCloseRecipe}
+        aria-labelledby="recipe-modal-title"
+        aria-describedby="recipe-modal-description"
+      >
+        <Box
+          sx={{
+            width: '80%',
+            maxWidth: '800px',
+            height: '80%',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            margin: 'auto',
+            display: 'flex',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            alignItems: 'center',
+            overflow: 'auto',
+
+          }}
+        >
+          <Typography id="recipe-modal-title" variant="h6" component="h2" gutterBottom>
+            Generated Recipe
+          </Typography>
+          <Box
+            id="recipe-modal-description"
+            sx={{
+              whiteSpace: 'pre-line', // Preserve line breaks
+              overflowWrap: 'break-word', // Ensure long lines wrap
+              maxHeight: '70vh', // Limit height for scrolling
+              overflowY: 'auto', // Add scroll if content overflows
+              width: '100%',
+              
+            }}
+          >
+            <Typography variant="body1">{recipe}</Typography>
+          </Box>
+          <Button variant="contained" color="primary" onClick={handleCloseRecipe} sx={{ marginTop: 2 }}>
+            Close
+          </Button>
+        </Box>
+      </Modal>
+
+
       <Modal open={openCamera} onClose={handleCloseCamera}>
         <Box sx={{width: '90%', height:"100%" }}>
           <CameraComponent onTakePhoto={handleTakePhoto} />
         </Box>
       </Modal>
+      {classificationResult && (
+        <Box sx={{ marginTop: 2 }}>
+          <h2>Classification Result:</h2>
+          <ul>
+            {classificationResult.map((item, index) => (
+              <li key={index}>
+                {item.name} 
+              </li>
+            ))}
+          </ul>
+         
+        </Box>
+      )}
+
+      {/* Display error message if any */}
+      {errorMessage && (
+        <Box sx={{ marginTop: 2, color: 'red' }}>
+          <p>{errorMessage}</p>
+        </Box>
+      )}
+    
 
      
 
@@ -290,12 +425,13 @@ export default function Home() {
             width = '100%'
             minHeight="150px"
             display={"flex"}
+
             justifyContent={"space-between"}
             alignItems={"center"}
             bgcolor={"#f0f0f0"}
             paddingX = {5}
           >
-            <Typography variant={"h3"} color={"#333"} textAlign={"center"}>
+            <Typography variant={"h3"} color={"#333"} textAlign={"left"}>
             {typeof name === 'string' ? name.charAt(0).toUpperCase() + name.slice(1) : 'Unnamed Item'}
             </Typography>
             <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
