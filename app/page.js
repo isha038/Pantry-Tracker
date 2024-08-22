@@ -2,7 +2,7 @@
 
 
 import { useEffect, useState, Suspense } from 'react';
-import { Box, Stack, Typography, Button, Modal, TextField, filledInputClasses } from "@mui/material";
+import { Box, Stack, Typography, Button, Modal, TextField, filledInputClasses, CircularProgress } from "@mui/material";
 // box similar to div
 import CameraComponent from './CameraComponent';
 import { uploadImage,analyzeImageWithGptVisionAPI, generateRecipeWithPantryIngredients } from './imageUtils';
@@ -65,6 +65,7 @@ export default function Home() {
   const [openSearch, setOpenSearch] = useState(false);
   const [openNoResults, setOpenNoResults] = useState(false);
   const [openCamera, setOpenCamera] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
  
   
   const [itemName, setItemName] = useState('');
@@ -218,18 +219,25 @@ export default function Home() {
     handleCloseSearch(); // Close the modal after search
   };
   const handleGenerateRecipe = async () => {
+    setIsLoading(true);
+    setRecipe(null);
+    setError(null);
     try {
       // Generate the recipe using pantry items
       const generatedRecipe = await generateRecipeWithPantryIngredients(filteredPantry);
       setRecipe(generatedRecipe);
-      console.log(generatedRecipe)
+      
       setError(''); // Clear any previous errors
       setOpenRecipe(true); // Ensure the modal opens
-    } catch (error) {
+    } catch (error) 
+    {
       console.error('Error generating recipe:', error);
       setError('Failed to generate recipe. Please try again.');
-      
     }
+    finally {
+      setIsLoading(false); // End loading
+    }
+      
   };
   
 
@@ -254,6 +262,12 @@ export default function Home() {
         Generate Recipe
       </Button>
       </Stack>
+
+      {isLoading && (
+  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <CircularProgress />
+  </Box>
+)}
       
       <Modal
         open={openRecipe}

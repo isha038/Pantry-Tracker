@@ -7,7 +7,7 @@ const openai = new OpenAI({
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const data = req.body;
-    console.log('Received data:', data);
+  
 
     // Format ingredient list with correct property names
     let ingredientList = "No ingredients provided";
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     }
 
     // Log the formatted ingredient list to verify it
-    console.log('Formatted ingredient list:', ingredientList);
+    
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4", // Confirm the model name; use gpt-4 or gpt-4-turbo if applicable
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       }
 
       const content = response.choices[0].message.content;
-      console.log("OpenAI response:", content);
+      
 
       // If the content is expected to be JSON, try to parse it.
       // Otherwise, you can directly send it as a plain text response.
