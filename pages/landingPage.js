@@ -92,6 +92,9 @@ export default function Home() {
 
   const router = useRouter();
 
+  
+
+
   const handleTakePhoto = async (dataUri) => {
     setClassificationResult(null);
     setErrorMessage(null);
@@ -102,6 +105,7 @@ export default function Home() {
   
       // Upload the image and get the download URL
       const imageUrl = await uploadImage(dataUri);
+      console.log(imageUrl)
   
       if (imageUrl) {
         // Analyze the image using GPT Vision API
@@ -141,6 +145,7 @@ export default function Home() {
       setErrorMessage('Failed to analyze the image. Please try again.');
     }
   };
+  
   
   const updatePantry = async () =>
     {

@@ -1,6 +1,6 @@
 
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { firestore } from '@/firebase';
+import { firestore,auth } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
 
@@ -12,9 +12,21 @@ import { collection, addDoc } from 'firebase/firestore';
  * @returns {Promise<string>} - The download URL of the uploaded image.
  */
 export async function uploadImage(dataUri) {
+
+  const user = auth.currentUser;
+
+  if (!user) {
+    console.error('User is not authenticated.');
+    return null;
+  }
+
+  const userId = user.uid;
+
   try {
+
+
     const storage = getStorage();
-    const storageRef = ref(storage, `images/${Date.now()}.jpg`);
+    const storageRef = ref(storage, `users/${userId}/images/${Date.now()}.jpg`);
     
     await uploadString(storageRef, dataUri, 'data_url');
     const imageUrl = await getDownloadURL(storageRef);
